@@ -45,10 +45,10 @@ async function run() {
         await client.connect();
 
         const usersCollection = client.db('creativeCampersDB').collection('users');
+        const classesCollection = client.db('creativeCampersDB').collection('classes');
 
         app.post('/jwt', (req, res) => {
             const user = req.body;
-            console.log(user);
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
                 expiresIn: '1h'
             });
@@ -61,6 +61,15 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
+              return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+            next()
+          }
+        const verifyInstructor = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'instructor') {
               return res.status(403).send({ error: true, message: 'forbidden access' })
             }
             next()
@@ -81,6 +90,16 @@ async function run() {
                 return res.send({ message: "User already exists" })
             }
             const result = await usersCollection.insertOne(user);
+            res.send(result)
+        })
+
+        app.patch("/users/role/:email", async(req, res) => {
+            const email = req.params.email;
+            const role = req.body.role;
+            console.log(email, role)
+            const query = {email: email};
+            const update = { $set: { role:  role}};
+            const result = await usersCollection.updateOne(query, update);
             res.send(result)
         })
 
@@ -121,6 +140,19 @@ async function run() {
             const user = await usersCollection.findOne(query);
             const result = { student: user?.role === 'student' };
             res.send(result)
+        })
+
+        // Classes API here:
+
+        app.get('/classes', async(req, res) =>{
+            const result = await classesCollection.find().toArray();
+            res.send(result)
+        })
+
+        app.post('/classes', verifyJwt, verifyInstructor, async(req, res) =>{
+            const newClass = req.body;
+            const result = await classesCollection.insertOne(newClass);
+            res.send(result);
         })
 
         // Send a ping to confirm a successful connection
