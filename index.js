@@ -61,19 +61,19 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
-              return res.status(403).send({ error: true, message: 'forbidden access' })
+                return res.status(403).send({ error: true, message: 'forbidden access' })
             }
             next()
-          }
+        }
         const verifyInstructor = async (req, res, next) => {
             const email = req.decoded.email;
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'instructor') {
-              return res.status(403).send({ error: true, message: 'forbidden access' })
+                return res.status(403).send({ error: true, message: 'forbidden access' })
             }
             next()
-          }
+        }
 
         // Users API Here :
 
@@ -93,12 +93,12 @@ async function run() {
             res.send(result)
         })
 
-        app.patch("/users/role/:email", async(req, res) => {
+        app.patch("/users/role/:email", async (req, res) => {
             const email = req.params.email;
             const role = req.body.role;
             console.log(email, role)
-            const query = {email: email};
-            const update = { $set: { role:  role}};
+            const query = { email: email };
+            const update = { $set: { role: role } };
             const result = await usersCollection.updateOne(query, update);
             res.send(result)
         })
@@ -144,15 +144,29 @@ async function run() {
 
         // Classes API here:
 
-        app.get('/classes', async(req, res) =>{
+        app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray();
             res.send(result)
         })
 
-        app.post('/classes', verifyJwt, verifyInstructor, async(req, res) =>{
+        app.post('/classes', verifyJwt, verifyInstructor, async (req, res) => {
             const newClass = req.body;
             const result = await classesCollection.insertOne(newClass);
             res.send(result);
+        })
+
+        app.get('/myClasses', verifyJwt, async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([]);
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'Forbidden access!' })
+            }
+            const query = { instructor_email: email };
+            const result = await classesCollection.find(query).toArray();
+            res.send(result)
         })
 
         // Send a ping to confirm a successful connection
