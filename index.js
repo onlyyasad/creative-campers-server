@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pf543tb.mongodb.net/?retryWrites=true&w=majority`;
 
 // JWT middleware :
@@ -179,6 +179,16 @@ async function run() {
                 return res.status(403).send({ error: true, message: 'Forbidden access!' })
             }
             const result = await classesCollection.find().toArray();
+            res.send(result)
+        })
+
+        app.patch("/classes/status/:id", async (req, res) => {
+            const id = req.params.id;
+            const status = req.body.status;
+            console.log(id, status)
+            const query = { _id: new ObjectId(id) };
+            const update = { $set: { status: status } };
+            const result = await classesCollection.updateOne(query, update);
             res.send(result)
         })
 
