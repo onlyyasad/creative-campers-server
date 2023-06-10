@@ -169,6 +169,19 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/classes/all', verifyJwt, verifyAdmin, async(req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([]);
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'Forbidden access!' })
+            }
+            const result = await classesCollection.find().toArray();
+            res.send(result)
+        })
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
