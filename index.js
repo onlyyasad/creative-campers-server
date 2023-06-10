@@ -46,6 +46,7 @@ async function run() {
 
         const usersCollection = client.db('creativeCampersDB').collection('users');
         const classesCollection = client.db('creativeCampersDB').collection('classes');
+        const selectedClassesCollection = client.db('creativeCampersDB').collection('selectedClasses');
 
         app.post('/jwt', (req, res) => {
             const user = req.body;
@@ -75,7 +76,7 @@ async function run() {
             next()
         }
 
-        // Users API Here :
+        ///////////////////////////////////////// Users API Here : ///////////////////////////////////////////////
 
         app.get("/users", verifyJwt, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray();
@@ -142,10 +143,10 @@ async function run() {
             res.send(result)
         })
 
-        // Classes API here:
+        //////////////////////////////// Classes API here: ///////////////////////////////////////////////
 
         app.get('/classes', async (req, res) => {
-            const filter = {status : "approved"};
+            const filter = { status: "approved" };
             const result = await classesCollection.find(filter).toArray();
             res.send(result)
         })
@@ -170,7 +171,7 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/classes/all', verifyJwt, verifyAdmin, async(req, res) => {
+        app.get('/classes/all', verifyJwt, verifyAdmin, async (req, res) => {
             const email = req.query.email;
             if (!email) {
                 res.send([]);
@@ -201,6 +202,22 @@ async function run() {
             const update = { $set: { feedback: feedback } };
             const result = await classesCollection.updateOne(query, update);
             res.send(result)
+        })
+
+        // ///////////////////////////// Selected Classes API Here: //////////////////////////////////////
+
+        app.post('/selectedClasses', async (req, res) => {
+            const selectedClass = req.body;
+            const classId = { classId: selectedClass.classId };
+            const existing = await selectedClassesCollection.findOne(classId);
+            if (existing) {
+                res.status(403).send({ error: true, message: "Already Selected" })
+            }
+            else {
+                const result = await selectedClassesCollection.insertOne(selectedClass);
+                res.send(result)
+            }
+
         })
 
         // Send a ping to confirm a successful connection
