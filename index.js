@@ -145,7 +145,8 @@ async function run() {
         // Classes API here:
 
         app.get('/classes', async (req, res) => {
-            const result = await classesCollection.find().toArray();
+            const filter = {status : "approved"};
+            const result = await classesCollection.find(filter).toArray();
             res.send(result)
         })
 
