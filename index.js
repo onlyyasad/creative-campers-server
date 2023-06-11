@@ -205,7 +205,7 @@ async function run() {
             res.send(result)
         })
 
-        /////////////////////////////// Selected Classes API Here: //////////////////////////////////////
+        /////////////////////////////// Selected Classes API Here: /////////////////////////////////////////
 
         app.get('/selectedClasses', verifyJwt, async (req, res) => {
             const email = req.query.email;
@@ -224,9 +224,14 @@ async function run() {
         app.post('/selectedClasses', async (req, res) => {
             const selectedClass = req.body;
             const classId = { classId: selectedClass.classId };
-            const existing = await selectedClassesCollection.findOne(classId);
-            if (existing) {
+            const filter = {classId: selectedClass.classId, email: selectedClass.email}
+            const existingInSelected = await selectedClassesCollection.findOne(classId);
+            const existingInPayment = await paymentsCollection.findOne(filter);
+            if (existingInSelected) {
                 res.status(403).send({ error: true, message: "Already Selected" })
+            }
+            else if (existingInPayment) {
+                res.status(403).send({ error: true, message: "Already Enrolled" })
             }
             else {
                 const result = await selectedClassesCollection.insertOne(selectedClass);
@@ -243,6 +248,20 @@ async function run() {
         })
 
         /////////////////////////////////// Payment APIs are here: /////////////////////////////////////////
+
+        app.get('/payments/enrolledClasses', verifyJwt, async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([]);
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'Forbidden access!' })
+            }
+            const query = { email: email };
+            const result = await paymentsCollection.find(query).toArray();
+            res.send(result)
+        })
 
         app.post("/create-payment-intent", async (req, res) => {
             const { price } = req.body;
