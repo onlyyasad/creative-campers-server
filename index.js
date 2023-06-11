@@ -224,7 +224,7 @@ async function run() {
         app.post('/selectedClasses', async (req, res) => {
             const selectedClass = req.body;
             const classId = { classId: selectedClass.classId };
-            const filter = {classId: selectedClass.classId, email: selectedClass.email}
+            const filter = { classId: selectedClass.classId, email: selectedClass.email }
             const existingInSelected = await selectedClassesCollection.findOne(classId);
             const existingInPayment = await paymentsCollection.findOne(filter);
             if (existingInSelected) {
@@ -282,10 +282,24 @@ async function run() {
         app.post('/payments', verifyJwt, async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
-
             const query = { _id: new ObjectId(payment.savedId) };
+            const filter = { _id: new ObjectId(payment.classId) };
+
+            const classData = await classesCollection.findOne(filter);
+
+            const updatedAvailableSeats = classData.available_seats - 1;
+            const updatedEnrolled = classData.enrolled + 1;
+
+            const update = {
+                $set: {
+                    available_seats: updatedAvailableSeats,
+                    enrolled: updatedEnrolled
+                }
+            };
+            const updateResult = await classesCollection.updateOne(filter, update);
+
             const deleteResult = await selectedClassesCollection.deleteOne(query)
-            res.send({ result, deleteResult })
+            res.send({ result, updateResult, deleteResult })
         })
 
         // Send a ping to confirm a successful connection
