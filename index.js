@@ -118,6 +118,12 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/users/instructors', async (req, res) => {
+            const query = { role: "instructor" };
+            const result = await usersCollection.find(query).toArray();
+            res.send(result)
+        })
+        
         app.get('/users/instructor/:email', verifyJwt, async (req, res) => {
             const email = req.params.email;
 
@@ -259,7 +265,7 @@ async function run() {
                 return res.status(403).send({ error: true, message: 'Forbidden access!' })
             }
             const query = { email: email };
-            const result = await paymentsCollection.find(query).toArray();
+            const result = await paymentsCollection.find(query).sort({ date: -1 }).toArray();
             res.send(result)
         })
 
