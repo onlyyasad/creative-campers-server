@@ -48,6 +48,7 @@ async function run() {
         const usersCollection = client.db('creativeCampersDB').collection('users');
         const classesCollection = client.db('creativeCampersDB').collection('classes');
         const selectedClassesCollection = client.db('creativeCampersDB').collection('selectedClasses');
+        const paymentsCollection = client.db('creativeCampersDB').collection('payments');
 
         app.post('/jwt', (req, res) => {
             const user = req.body;
@@ -56,7 +57,6 @@ async function run() {
             });
             res.send({ token });
         })
-
 
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
@@ -205,7 +205,8 @@ async function run() {
             res.send(result)
         })
 
-        // ///////////////////////////// Selected Classes API Here: //////////////////////////////////////
+        /////////////////////////////// Selected Classes API Here: //////////////////////////////////////
+
         app.get('/selectedClasses', verifyJwt, async (req, res) => {
             const email = req.query.email;
             if (!email) {
@@ -241,6 +242,8 @@ async function run() {
             res.send(result)
         })
 
+        /////////////////////////////////// Payment APIs are here: /////////////////////////////////////////
+
         app.post("/create-payment-intent", async (req, res) => {
             const { price } = req.body;
             const amount = price * 100;
@@ -256,6 +259,15 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             });
         });
+
+        app.post('/payments', verifyJwt, async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+
+            const query = { _id: new ObjectId(payment.savedId) };
+            const deleteResult = await selectedClassesCollection.deleteOne(query)
+            res.send({ result, deleteResult })
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
