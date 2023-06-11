@@ -205,6 +205,19 @@ async function run() {
         })
 
         // ///////////////////////////// Selected Classes API Here: //////////////////////////////////////
+        app.get('/selectedClasses', verifyJwt, async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+              res.send([]);
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+              return res.status(403).send({ error: true, message: 'Forbidden access!' })
+            }
+            const query = { email: email };
+            const result = await selectedClassesCollection.find(query).toArray();
+            res.send(result)
+          })
 
         app.post('/selectedClasses', async (req, res) => {
             const selectedClass = req.body;
@@ -219,6 +232,13 @@ async function run() {
             }
 
         })
+
+        app.delete('/selectedClasses/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await selectedClassesCollection.deleteOne(query);
+            res.send(result)
+          })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
